@@ -1,0 +1,48 @@
+name: 2 - Fabriquer l'APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.7' }
+      - name: Préparer la clé de signature
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/cops.jks"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/cops.jks" >> $GITHUB_ENV
+          else
+            echo "::warning::Aucune clé de signature : l'APK sera NON signé (voir README)."
+          fi
+      - name: Compiler
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          if [ -z "$APP_URL" ]; then echo "::error::Variable APP_URL manquante (Settings > Variables)"; exit 1; fi
+          gradle --no-daemon assembleRelease
+      - name: Nommer l'APK
+        run: |
+          mkdir out
+          cp app/build/outputs/apk/release/*.apk out/COPS-FASEG.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: COPS-FASEG-apk, path: out/COPS-FASEG.apk }
+      - name: Publier une version téléchargeable (lien direct)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v${{ github.run_number }}" out/COPS-FASEG.apk --title "COP'S FASEG v${{ github.run_number }}" --notes "Application Android COP'S FASEG" --repo "${{ github.repository }}"
