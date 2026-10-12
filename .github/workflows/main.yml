@@ -1,0 +1,26 @@
+name: 1 - Créer la clé de signature
+on: workflow_dispatch
+jobs:
+  cle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - name: Générer la clé
+        run: |
+          PASS=$(openssl rand -hex 12)
+          keytool -genkeypair -v -keystore cops.jks -storetype JKS -alias cops -keyalg RSA -keysize 2048 -validity 12000 \
+            -storepass "$PASS" -keypass "$PASS" -dname "CN=COPS FASEG DSCHANG, O=COPS FASEG, C=CM"
+          {
+            echo "KEYSTORE_PASSWORD=$PASS"
+            echo "KEY_ALIAS=cops"
+            echo "KEY_PASSWORD=$PASS"
+            echo "KEYSTORE_BASE64="
+            base64 -w0 cops.jks
+            echo
+          } > cle-a-copier.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cle-de-signature-CONFIDENTIEL
+          path: cle-a-copier.txt
+          retention-days: 1
