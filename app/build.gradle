@@ -1,0 +1,55 @@
+plugins {
+    id 'com.android.application'
+}
+
+// URL du portail (déploiement Apps Script « /exec »).
+// Fournie par la variable GitHub « APP_URL » (voir README) ou -PappUrl=...
+def appUrl = project.findProperty('appUrl') ?: System.getenv('APP_URL') ?: 'https://script.google.com/macros/s/REMPLACER_PAR_VOTRE_ID/exec'
+def vCode  = (System.getenv('VERSION_CODE') ?: '1') as int
+def vName  = System.getenv('VERSION_NAME') ?: '1.0.' + vCode
+
+android {
+    namespace 'org.copsfaseg.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'org.copsfaseg.app'
+        minSdk 24
+        targetSdk 34
+        versionCode vCode
+        versionName vName
+        buildConfigField "String", "APP_URL", "\"${appUrl}\""
+    }
+
+    buildFeatures { buildConfig true }
+
+    signingConfigs {
+        release {
+            def ks = System.getenv('KEYSTORE_FILE')
+            if (ks && new File(ks).exists()) {
+                storeFile new File(ks)
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (System.getenv('KEYSTORE_FILE')) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.12.0'
+}

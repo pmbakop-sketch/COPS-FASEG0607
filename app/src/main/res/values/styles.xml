@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="marine">#0B2447</color>
+    <style name="AppTheme" parent="android:Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:windowBackground">@color/marine</item>
+        <item name="android:statusBarColor">@color/marine</item>
+        <item name="android:navigationBarColor">@color/marine</item>
+    </style>
+</resources>
